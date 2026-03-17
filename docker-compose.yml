@@ -70,13 +70,8 @@ services:
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - airflow-logs:/opt/airflow/logs
-    command: >
-      bash -c "
-      airflow db migrate || airflow db init &&
-      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true &&
-      airflow connections add kafka_default --conn-type kafka --conn-host kafka --conn-port 29092 --conn-extra '{\"bootstrap.servers\": \"kafka:29092\", \"group.id\": \"airflow-consumer\"}' || true &&      airflow connections add postgres_default --conn-type postgres --conn-host postgres --conn-port 5432 --conn-login airflow --conn-password airflow --conn-schema airflow || true &&      airflow scheduler &
-      airflow webserver --port 8080
-      "
+    entrypoint: /bin/bash
+    command: /init-airflow.sh
     ports:
       - "8081:8080"
     networks:

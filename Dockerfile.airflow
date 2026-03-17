@@ -11,3 +11,9 @@ RUN pip install --no-cache-dir \
     apache-airflow-providers-postgres \
     apache-airflow-providers-apache-kafka \
     psycopg2-binary
+
+# Copiar el script de inicialización
+USER root
+COPY init-airflow.sh /init-airflow.sh
+RUN chmod +x /init-airflow.sh
+USER airflow
