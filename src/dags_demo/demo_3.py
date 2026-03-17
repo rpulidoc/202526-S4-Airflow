@@ -1,66 +1,46 @@
+import json
 from datetime import datetime
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from airflow.providers.postgres.hooks.postgres import PostgresHook
-
-POSTGRES_CONN_ID = "postgres_default"
+from kafka import KafkaProducer
 
 
-def crear_tabla():
-    hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
-    hook.run("""
-        CREATE TABLE IF NOT EXISTS demo_airflow_users (
-            id INTEGER PRIMARY KEY,
-            nombre TEXT NOT NULL
-        );
-    """)
-    print("Tabla creada o ya existente")
+KAFKA_BOOTSTRAP_SERVERS = "kafka:9092"
+KAFKA_TOPIC = "demo_airflow_topic"
 
 
-def insertar_datos():
-    hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
-    hook.run("""
-        INSERT INTO demo_airflow_users (id, nombre)
-        VALUES
-            (1, 'Ana'),
-            (2, 'Luis'),
-            (3, 'Marta')
-        ON CONFLICT (id) DO NOTHING;
-    """)
-    print("Datos insertados")
+def enviar_mensajes():
+    producer = KafkaProducer(
+        bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
+        value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+    )
 
+    mensajes = [
+        {"id": 1, "mensaje": "hola"},
+        {"id": 2, "mensaje": "airflow"},
+        {"id": 3, "mensaje": "kafka"},
+    ]
 
-def consultar_datos():
-    hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
-    rows = hook.get_records("SELECT * FROM demo_airflow_users ORDER BY id;")
+    for mensaje in mensajes:
+        producer.send(KAFKA_TOPIC, value=mensaje)
+        print(f"Enviado: {mensaje}")
 
-    print("Contenido de demo_airflow_users:")
-    for row in rows:
-        print(row)
+    producer.flush()
+    producer.close()
+
+    print("Mensajes enviados correctamente")
 
 
 with DAG(
-    dag_id="demo_04_postgres",
+    dag_id="demo_03_kafka",
     start_date=datetime(2024, 1, 1),
-    schedule=None,
+    schedule_interval=None,
     catchup=False,
-    tags=["demo", "postgres"],
+    tags=["demo", "kafka"],
 ) as dag:
 
-    crear = PythonOperator(
-        task_id="crear_tabla",
-        python_callable=crear_tabla,
+    enviar = PythonOperator(
+        task_id="enviar_mensajes_kafka",
+        python_callable=enviar_mensajes,
     )
-
-    insertar = PythonOperator(
-        task_id="insertar_datos",
-        python_callable=insertar_datos,
-    )
-
-    consultar = PythonOperator(
-        task_id="consultar_datos",
-        python_callable=consultar_datos,
-    )
-
-    crear >> insertar >> consultar
