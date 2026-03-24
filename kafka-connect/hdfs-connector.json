@@ -1,0 +1,20 @@
+{
+  "name": "hdfs3-sink-sensores",
+  "config": {
+    "connector.class": "io.confluent.connect.hdfs3.Hdfs3SinkConnector",
+    "tasks.max": "1",
+    "topics": "sensores_temp_humedad",
+    "hdfs.url": "hdfs://namenode:9000",
+    "flush.size": "100",
+    "rotate.interval.ms": "30000",
+    "locale": "es_ES",
+    "timezone": "Europe/Madrid",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+    "format.class": "io.confluent.connect.hdfs3.json.JsonFormat",
+    "storage.class": "io.confluent.connect.hdfs3.storage.HdfsStorage",
+    "topics.dir": "/topics",
+    "logs.dir": "/logs"
+  }
+}

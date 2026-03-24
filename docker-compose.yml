@@ -5,6 +5,8 @@ networks:
 volumes:
   airflow-logs:
   postgres-db:
+  hadoop-namenode:
+  hadoop-datanode:
 
 services:
   postgres:
@@ -50,6 +52,69 @@ services:
     networks:
       - airflow_network
 
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    hostname: namenode
+    environment:
+      - CLUSTER_NAME=airflow-cluster
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - HDFS_CONF_dfs_replication=1
+      - HDFS_CONF_dfs_webhdfs_enabled=true
+      - HDFS_CONF_dfs_permissions_enabled=false
+      - HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    volumes:
+      - hadoop-namenode:/hadoop/dfs/name
+    networks:
+      - airflow_network
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode
+    hostname: datanode
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - HDFS_CONF_dfs_replication=1
+      - HDFS_CONF_dfs_permissions_enabled=false
+    volumes:
+      - hadoop-datanode:/hadoop/dfs/data
+    depends_on:
+      - namenode
+    networks:
+      - airflow_network
+
+  kafka-connect:
+    build:
+      context: .
+      dockerfile: Dockerfile.kafka-connect
+    container_name: kafka-connect
+    hostname: kafka-connect
+    environment:
+      - CONNECT_BOOTSTRAP_SERVERS=kafka:29092
+      - CONNECT_REST_ADVERTISED_HOST_NAME=kafka-connect
+      - CONNECT_REST_PORT=8083
+      - CONNECT_GROUP_ID=connect-group
+      - CONNECT_CONFIG_STORAGE_TOPIC=_connect-configs
+      - CONNECT_OFFSET_STORAGE_TOPIC=_connect-offsets
+      - CONNECT_STATUS_STORAGE_TOPIC=_connect-status
+      - CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_KEY_CONVERTER=org.apache.kafka.connect.storage.StringConverter
+      - CONNECT_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE=false
+      - CONNECT_PLUGIN_PATH=/usr/share/java,/usr/share/confluent-hub-components
+    ports:
+      - "8083:8083"
+    depends_on:
+      - kafka
+      - namenode
+    networks:
+      - airflow_network
+
   airflow:
     build:
       context: .
@@ -62,6 +127,10 @@ services:
         condition: service_healthy
       kafka:
         condition: service_started
+      namenode:
+        condition: service_started
+      kafka-connect:
+        condition: service_started
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
@@ -69,6 +138,7 @@ services:
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
     volumes:
       - ./airflow/dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
       - airflow-logs:/opt/airflow/logs
     entrypoint: /bin/bash
     command: /init-airflow.sh
@@ -76,7 +146,3 @@ services:
       - "8081:8080"
     networks:
       - airflow_network
-        
-
-
-

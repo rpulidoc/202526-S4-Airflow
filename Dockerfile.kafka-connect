@@ -1,0 +1,4 @@
+FROM confluentinc/cp-kafka-connect:7.9.0
+
+# Install the HDFS3 Sink Connector from Confluent Hub
+RUN confluent-hub install --no-prompt confluentinc/kafka-connect-hdfs3:1.1.20

@@ -11,7 +11,9 @@ RUN pip install --no-cache-dir \
     apache-airflow-providers-postgres \
     apache-airflow-providers-apache-kafka \
     kafka-python \
-    psycopg2-binary
+    psycopg2-binary \
+    pandas \
+    requests
 
 # Copiar el script de inicialización
 USER root
