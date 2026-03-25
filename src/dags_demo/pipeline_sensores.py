@@ -453,7 +453,7 @@ def consultas_analiticas(**context):
 
 
 def guardar_resultados(**context):
-    """Tarea 9: Persiste métricas del pipeline y conclusiones en PostgreSQL."""
+    """Tarea 9: Persiste métricas del pipeline en PostgreSQL."""
     ti = context["ti"]
     hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
@@ -473,26 +473,7 @@ def guardar_resultados(**context):
         ),
     }
 
-    conclusiones = """
-CONCLUSIONES DEL ANÁLISIS DE TEMPERATURA Y HUMEDAD:
-1. SENSOR EXTERIOR tiene la mayor variabilidad térmica (desviación estándar más alta),
-   lo que refleja la influencia de condiciones meteorológicas externas.
-2. Las horas pico de temperatura (12-16h) coinciden con los valores mínimos de humedad,
-   confirmando la correlación inversa temperatura-humedad.
-3. El sensor de COCINA registra los porcentajes más altos de humedad elevada (>80%),
-   lo que podría indicar problemas de ventilación o acumulación de vapor.
-4. Los días más calurosos del período muestran temperaturas >28°C con humedad relativa
-   media por debajo del 50%, condiciones típicas de ola de calor moderada.
-5. La categoría 'confortable' (18-24°C) predomina en dormitorio y salón (>60% lecturas),
-   mientras que el exterior muestra un reparto más uniforme entre categorías.
-RECOMENDACIÓN EMPRESARIAL: Instalar sistemas de ventilación adicionales en cocina
-y establecer alertas automáticas cuando la humedad supere el 80% durante más de 2h.
-"""
-
-    log.info("\n%s", conclusiones)
-
     rows = [(k, str(v)) for k, v in metricas.items()]
-    rows.append(("conclusiones", conclusiones))
 
     hook.insert_rows(
         table=RESULTS_TABLE,
