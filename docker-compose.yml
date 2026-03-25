@@ -137,7 +137,7 @@ services:
       - AIRFLOW__CORE__FERNET_KEY='d6nNXtWJQL85dCkOTB8FRQ5TPAi6XW7Xbw3l84QJ8q8='
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
     volumes:
-      - ./airflow/dags:/opt/airflow/dags
+      - ./src/dags_demo:/opt/airflow/dags
       - ./data:/opt/airflow/data
       - airflow-logs:/opt/airflow/logs
     entrypoint: /bin/bash
