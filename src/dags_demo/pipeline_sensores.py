@@ -494,9 +494,10 @@ y establecer alertas automáticas cuando la humedad supere el 80% durante más d
     rows = [(k, str(v)) for k, v in metricas.items()]
     rows.append(("conclusiones", conclusiones))
 
-    hook.run(
-        f"INSERT INTO {RESULTS_TABLE} (consulta, resultado) VALUES (%s, %s)",
-        parameters=rows,
+    hook.insert_rows(
+        table=RESULTS_TABLE,
+        rows=rows,
+        target_fields=["consulta", "resultado"],
     )
 
     log.info("Resumen del pipeline:")
