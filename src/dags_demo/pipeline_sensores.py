@@ -115,6 +115,8 @@ def registrar_kafka_connect(**context):
             "storage.class": "io.confluent.connect.hdfs3.storage.HdfsStorage",
             "topics.dir": "/topics",
             "logs.dir": "/logs",
+            "confluent.topic.bootstrap.servers": KAFKA_BOOTSTRAP,
+            "confluent.topic.replication.factor": "1",
         },
     }
 
@@ -124,6 +126,8 @@ def registrar_kafka_connect(**context):
         data=json.dumps(config),
         timeout=15,
     )
+    if not resp.ok:
+        log.error("Error al registrar conector: %s", resp.text)
     resp.raise_for_status()
     log.info("Conector '%s' registrado correctamente.", connector_name)
     return connector_name
